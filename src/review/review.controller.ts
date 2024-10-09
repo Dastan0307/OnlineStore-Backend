@@ -1,34 +1,46 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ReviewService } from './review.service';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { UpdateReviewDto } from './dto/update-review.dto';
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	HttpCode,
+	Param,
+	Post,
+	UsePipes,
+	ValidationPipe
+} from '@nestjs/common'
+import { Auth } from 'src/auth/decorators/auth.decorator'
+import { CurrentUser } from 'src/user/decorators/user.decorator'
+import { ReviewDto } from './dto/review.dto'
+import { ReviewService } from './review.service'
 
-@Controller('review')
+@Controller('reviews')
 export class ReviewController {
-  constructor(private readonly reviewService: ReviewService) {}
+	constructor(private readonly reviewService: ReviewService) {}
 
-  @Post()
-  create(@Body() createReviewDto: CreateReviewDto) {
-    return this.reviewService.create(createReviewDto);
-  }
+	@Auth()
+	@Get('by-storeId/:storeId')
+	async getByStoreId(@Param('storeId') storeId: string) {
+		return this.reviewService.getByStoreId(storeId)
+	}
 
-  @Get()
-  findAll() {
-    return this.reviewService.findAll();
-  }
+	@UsePipes(new ValidationPipe())
+	@HttpCode(200)
+	@Auth()
+	@Post(':productId/:storeId')
+	async create(
+		@CurrentUser('id') userId: string,
+		@Param('productId') productId: string,
+		@Param('storeId') storeId: string,
+		@Body() dto: ReviewDto
+	) {
+		return this.reviewService.create(userId, productId, storeId, dto)
+	}
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reviewService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
-    return this.reviewService.update(+id, updateReviewDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reviewService.remove(+id);
-  }
+	@HttpCode(200)
+	@Auth()
+	@Delete(':id')
+	async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+		return this.reviewService.delete(id, userId)
+	}
 }
