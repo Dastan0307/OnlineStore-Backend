@@ -52,4 +52,4 @@ export class ColorController {
 	async delete(@Param('id') id: string) {
 		return this.colorService.delete(id)
 	}
-}
+} 
